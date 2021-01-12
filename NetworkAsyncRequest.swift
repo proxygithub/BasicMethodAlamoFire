@@ -405,3 +405,101 @@ class NetworkAsyncRequest: NSObject {
         }
     }
 }
+
+//=============
+//Simeple Alamofire call
+class NetworkReqAPI {
+    
+    static var shared: NetworkReqAPI = {
+        return NetworkReqAPI()
+    }()
+    
+    internal func performNetwork_GET_REQUEST(_ strURL : String ,_ dictParameter : [String:Any], resClauser : @escaping (DataResponse<Any>) -> Void) {
+        
+        let strFinaleUrl = strURL + self.performQueryString(dictParameter)
+        
+        self.debugLog(" >> \(strFinaleUrl)")
+        
+        CommonClass.ShowLoader(str: "Loading")
+        
+        Alamofire.request(strFinaleUrl, method: .get).responseJSON { (response) in
+            
+            CommonClass.HideLoader()
+            
+            switch(response.result) {
+                
+            case .success(_):
+                
+                if let data = response.result.value {
+                    let jsonResponseData = JSON(data)
+                    self.debugLog("Response >> \(jsonResponseData)")
+                }
+                
+            case .failure(_):
+                
+                if response.error != nil {
+                    self.debugLog("Error Exception >> \(response.error.debugDescription)")
+                }
+                
+            }
+            
+            resClauser(response)
+        }
+    }
+
+     internal func performNetwork_POST_REQUEST(_ strURL : String ,_ dictParameter : [String:Any], resClauser : @escaping (DataResponse<Any>) -> Void) {
+                
+        self.debugLog(" >> \(strURL) >>> \(dictParameter)")
+        
+        CommonClass.ShowLoader(str: "Loading")
+        
+        Alamofire.request(strURL, method: .post, parameters: dictParameter, encoding: URLEncoding.default).responseJSON { (response) in
+            CommonClass.HideLoader()
+            
+            switch(response.result) {
+                
+            case .success(_):
+                
+                if let data = response.result.value {
+                    let jsonResponseData = JSON(data)
+                    self.debugLog("Response >> \(jsonResponseData)")
+                }
+                
+            case .failure(_):
+                
+                if response.error != nil {
+                    self.debugLog("Error Exception >> \(response.error.debugDescription)")
+                }
+                
+            }
+            
+            resClauser(response)
+        }
+        
+    }
+    
+    fileprivate func performQueryString(_ dictToChange : [String:Any]) -> String {
+
+        var strQueryString = ""
+        
+        var i = 1
+        for (param,value) in dictToChange {
+            if i == dictToChange.count {
+                strQueryString += param + "="+(value as? String ?? "")
+            }
+            else {
+                strQueryString += param + "="+(value as? String ?? "") + "&"
+            }
+            i += 1
+        }
+        
+        return (strQueryString.count > 0 ? "?" + strQueryString : "")
+    }
+
+    fileprivate func debugLog(_ strLog : Any, _ strfunctionName : String = #function, _ strFileName : String = #file, _ strLineNum : Int = #line) {
+        print("\(URL(fileURLWithPath: strFileName).lastPathComponent) [\(strLineNum)]-> \(strfunctionName) : \(strLog)")
+    }
+}
+
+
+
